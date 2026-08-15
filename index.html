@@ -321,7 +321,7 @@
 
   <div class="story">
     <span class="tag">Story so far</span>
-    <p>Off the grid for a bit, but I'll be back. While the clock runs down, catch me on TikTok or drop a message on WhatsApp — those are the only lines staying open.</p>
+    <p>Off the grid for a bit, but I'll be back. While the clock runs down, catch me on TikTok, drop a message on WhatsApp, or reach me on iMessage — those are the only lines staying open.</p>
   </div>
 
   <div class="menu">
@@ -354,11 +354,11 @@
       <span class="menu-num">P3</span>
     </a>
 
-    <a class="menu-item" href="https://tiktok.com/@abvlafiaa" target="_blank" rel="noopener">
+    <a class="menu-item" href="sms:esb.abulafia@gmail.com">
       <span class="cursor">▶</span>
       <div class="menu-info">
-        <span class="menu-label">TikTok</span>
-        <span class="menu-value">@abvlafiaa</span>
+        <span class="menu-label">iMessage</span>
+        <span class="menu-value">esb.abulafia@gmail.com</span>
       </div>
       <span class="menu-num">P4</span>
     </a>
@@ -393,7 +393,8 @@
 
   // ---- 8-bit sound engine (synthesized, no audio files needed) ----
   let audioCtx = null;
-  let soundOn = localStorage.getItem('poeboy-sfx') === 'on';
+  const savedSfx = localStorage.getItem('poeboy-sfx');
+  let soundOn = savedSfx === null ? true : savedSfx === 'on';
 
   function getCtx(){
     if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
