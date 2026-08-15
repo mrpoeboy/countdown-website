@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POEBOY — Signal Offline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0e16;
+    --bg-deep: #060810;
+    --glass: rgba(255,255,255,0.04);
+    --glass-border: rgba(255,255,255,0.09);
+    --cyan: #35e6ff;
+    --cyan-soft: #35e6ff88;
+    --blue-glow: #4d7cff;
+    --text: #e9f2f7;
+    --muted: #7d8a9a;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Ambient background */
+  .bg-glow{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 700px 500px at 50% -10%, rgba(53,230,255,0.14), transparent 60%),
+      radial-gradient(ellipse 600px 400px at 90% 90%, rgba(77,124,255,0.10), transparent 60%),
+      radial-gradient(ellipse 500px 400px at 5% 80%, rgba(53,230,255,0.06), transparent 60%),
+      var(--bg-deep);
+  }
+
+  .grid-overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black, transparent 75%);
+  }
+
+  .container{
+    position: relative;
+    z-index: 1;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 24px 60px;
+  }
+
+  .status-pill{
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 16px;
+    border-radius: 999px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 36px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards;
+  }
+
+  .pulse-dot{
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan), 0 0 16px var(--cyan);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  .name{
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.6rem, 9vw, 5rem);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    background: linear-gradient(180deg, #ffffff 0%, #b9d6e0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 10px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.1s forwards;
+  }
+
+  .tagline{
+    font-family: var(--font-mono);
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    margin-bottom: 56px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.2s forwards;
+  }
+
+  .tagline span{ color: var(--cyan); }
+
+  /* Radar ring behind countdown */
+  .radar-wrap{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    animation: fadeUp 0.9s ease 0.3s forwards;
+  }
+
+  .radar-ring{
+    position: absolute;
+    border: 1px solid rgba(53,230,255,0.18);
+    border-radius: 26px;
+    inset: -22px;
+    animation: ringPulse 3.4s ease-out infinite;
+  }
+  .radar-ring.r2{ animation-delay: 1.13s; }
+  .radar-ring.r3{ animation-delay: 2.26s; }
+
+  .countdown-panel{
+    position: relative;
+    display: flex;
+    gap: clamp(10px, 3vw, 22px);
+    padding: clamp(20px, 5vw, 34px) clamp(18px, 5vw, 40px);
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow:
+      0 0 60px rgba(53,230,255,0.08),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  .time-block{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: clamp(52px, 14vw, 92px);
+  }
+
+  .time-value{
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(2.1rem, 8vw, 3.6rem);
+    line-height: 1;
+    color: var(--text);
+    text-shadow: 0 0 24px rgba(53,230,255,0.35);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .time-label{
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-top: 8px;
+    opacity: 0.85;
+  }
+
+  .time-sep{
+    font-family: var(--font-mono);
+    font-size: clamp(1.6rem, 6vw, 2.6rem);
+    color: rgba(255,255,255,0.15);
+    align-self: flex-start;
+    margin-top: clamp(2px, 1vw, 6px);
+  }
+
+  .target-date{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-top: 28px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.4s forwards;
+  }
+
+  .scroll-cue{
+    position: absolute;
+    bottom: 34px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.6s forwards;
+  }
+  .scroll-cue .line{
+    width: 1px;
+    height: 26px;
+    background: linear-gradient(180deg, var(--cyan), transparent);
+    animation: scrollLine 2s ease-in-out infinite;
+  }
+
+  /* ---------- BIO ---------- */
+  .section{
+    padding: 90px 0;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before{
+    content: '';
+    width: 18px;
+    height: 1px;
+    background: var(--cyan);
+  }
+
+  .bio-text{
+    font-size: clamp(1.15rem, 3vw, 1.5rem);
+    line-height: 1.55;
+    color: var(--text);
+    font-weight: 400;
+    max-width: 620px;
+  }
+
+  .bio-text .accent{
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+  }
+
+  /* ---------- CONTACT ---------- */
+  .contact-heading{
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .contact-sub{
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 36px;
+  }
+
+  .channels{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .channel-card{
+    grid-column: span 1;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 22px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+  }
+
+  .channel-card:hover, .channel-card:focus-visible{
+    transform: translateY(-3px);
+    border-color: var(--cyan-soft);
+    background: rgba(53,230,255,0.06);
+    outline: none;
+  }
+
+  .channel-card.primary{
+    grid-column: span 2;
+    background: linear-gradient(135deg, rgba(53,230,255,0.14), rgba(77,124,255,0.08));
+    border-color: rgba(53,230,255,0.3);
+  }
+
+  .channel-icon{
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 11px;
+    background: rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .channel-icon svg{ width: 20px; height: 20px; }
+
+  .channel-info{ display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .channel-label{
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .channel-value{
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 520px){
+    .channels{ grid-template-columns: 1fr; }
+    .channel-card.primary{ grid-column: span 1; }
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    padding: 50px 0 60px;
+    text-align: center;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .footer-mark{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  .footer-mark span{ color: var(--cyan); }
+
+  /* ---------- ANIMATIONS ---------- */
+  @keyframes fadeUp{
+    from{ opacity: 0; transform: translateY(16px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse{
+    0%, 100%{ opacity: 1; transform: scale(1); }
+    50%{ opacity: 0.4; transform: scale(0.8); }
+  }
+  @keyframes ringPulse{
+    0%{ transform: scale(0.9); opacity: 0.9; }
+    100%{ transform: scale(1.35); opacity: 0; }
+  }
+  @keyframes scrollLine{
+    0%, 100%{ transform: scaleY(0.4); opacity: 0.4; }
+    50%{ transform: scaleY(1); opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+    html{ scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+<div class="grid-overlay"></div>
+
+<section class="hero">
+  <div class="status-pill">
+    <span class="pulse-dot"></span>
+    Signal offline
+  </div>
+
+  <h1 class="name">POEBOY</h1>
+  <p class="tagline">off the grid <span>//</span> reconnecting soon</p>
+
+  <div class="radar-wrap">
+    <div class="radar-ring r1"></div>
+    <div class="radar-ring r2"></div>
+    <div class="radar-ring r3"></div>
+    <div class="countdown-panel" id="countdown">
+      <div class="time-block">
+        <span class="time-value" id="days">00</span>
+        <span class="time-label">Days</span>
+      </div>
+      <span class="time-sep">:</span>
+      <div class="time-block">
+        <span class="time-value" id="hours">00</span>
+        <span class="time-label">Hrs</span>
+      </div>
+      <span class="time-sep">:</span>
+      <div class="time-block">
+        <span class="time-value" id="minutes">00</span>
+        <span class="time-label">Min</span>
+      </div>
+      <span class="time-sep">:</span>
+      <div class="time-block">
+        <span class="time-value" id="seconds">00</span>
+        <span class="time-label">Sec</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="target-date" id="target-date-label">until February 2027</p>
+
+  <div class="scroll-cue">
+    <span>scroll</span>
+    <span class="line"></span>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="eyebrow">status report</div>
+    <p class="bio-text">
+      Off the grid for a bit, but I'll be back. <span class="accent">// while the clock runs down</span>, catch me on TikTok or drop a message on WhatsApp — those are the only lines staying open.
+    </p>
+  </div>
+</section>
+
+<section class="section" id="contact">
+  <div class="container">
+    <div class="eyebrow">reconnect</div>
+    <h2 class="contact-heading">Two ways to reach me</h2>
+    <p class="contact-sub">Everything else is on pause until the timer hits zero.</p>
+
+    <div class="channels">
+      <a class="channel-card primary" href="tel:+554668659">
+        <div class="channel-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#35e6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </div>
+        <div class="channel-info">
+          <span class="channel-label">Direct line</span>
+          <span class="channel-value">Call me now</span>
+        </div>
+      </a>
+
+      <a class="channel-card" href="https://wa.me/554668659" target="_blank" rel="noopener">
+        <div class="channel-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#35e6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </div>
+        <div class="channel-info">
+          <span class="channel-label">WhatsApp</span>
+          <span class="channel-value">Send a message</span>
+        </div>
+      </a>
+
+      <a class="channel-card" href="https://tiktok.com/@abvlafia" target="_blank" rel="noopener">
+        <div class="channel-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#35e6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+        </div>
+        <div class="channel-info">
+          <span class="channel-label">TikTok</span>
+          <span class="channel-value">@abvlafia</span>
+        </div>
+      </a>
+
+      <a class="channel-card" href="https://tiktok.com/@abvlafia_" target="_blank" rel="noopener">
+        <div class="channel-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#35e6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+        </div>
+        <div class="channel-info">
+          <span class="channel-label">TikTok</span>
+          <span class="channel-value">@abvlafia_</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p class="footer-mark">POEBOY <span>//</span> back online soon</p>
+</footer>
+
+<script>
+  // Target: February 1, 2026, 00:00 local time
+  const target = new Date('2027-02-01T00:00:00');
+
+  const daysEl = document.getElementById('days');
+  const hoursEl = document.getElementById('hours');
+  const minutesEl = document.getElementById('minutes');
+  const secondsEl = document.getElementById('seconds');
+
+  function pad(n){ return String(n).padStart(2, '0'); }
+
+  function tick(){
+    const now = new Date();
+    let diff = target - now;
+
+    if(diff <= 0){
+      daysEl.textContent = '00';
+      hoursEl.textContent = '00';
+      minutesEl.textContent = '00';
+      secondsEl.textContent = '00';
+      return;
+    }
+
+    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const m = Math.floor((diff / (1000 * 60)) % 60);
+    const s = Math.floor((diff / 1000) % 60);
+
+    daysEl.textContent = pad(d);
+    hoursEl.textContent = pad(h);
+    minutesEl.textContent = pad(m);
+    secondsEl.textContent = pad(s);
+  }
+
+  tick();
+  setInterval(tick, 1000);
+</script>
+
+</body>
+</html>
