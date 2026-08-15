@@ -1,2 +1,3 @@
 # countdown-website
-just a countdown website about when I will be active on my socials again
+# Countdown Website
+This is a simple countdown website that tracks when I will be active on my social media platforms again.
